@@ -67,7 +67,10 @@
             if(data.error) return alert("Post Failed: " + data.details);
             document.getElementById('msg').value = '';
             load();
-        } catch(e) { alert("Network Error"); }
+        } catch(e) { 
+            console.error(e);
+            alert("Network Error"); 
+        }
     }
 </script>
 </body>
