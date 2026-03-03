@@ -4,44 +4,36 @@
     <title>MatrixGram Elite</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { font-family: sans-serif; background: #fafafa; margin: 0; display: flex; flex-direction: column; align-items: center; }
-        .nav { background: white; border-bottom: 1px solid #dbdbdb; width: 100%; padding: 10px; text-align: center; position: sticky; top: 0; }
-        .feed { width: 100%; max-width: 500px; padding: 20px; box-sizing: border-box; }
-        .post { background: white; border: 1px solid #dbdbdb; margin-bottom: 20px; padding: 15px; border-radius: 8px; }
-        .input-area { background: white; border: 1px solid #dbdbdb; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-        input, button, textarea { width: 100%; padding: 12px; margin-top: 10px; border: 1px solid #dbdbdb; border-radius: 5px; box-sizing: border-box; }
-        button { background: #0095f6; color: white; border: none; font-weight: bold; cursor: pointer; }
+        body { font-family: sans-serif; background: #fafafa; display: flex; flex-direction: column; align-items: center; margin: 0; }
+        .post { background: white; border: 1px solid #dbdbdb; padding: 15px; margin: 10px; width: 90%; max-width: 400px; border-radius: 8px; }
+        button { background: #0095f6; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; }
+        textarea { width: 100%; padding: 10px; border: 1px solid #dbdbdb; border-radius: 5px; box-sizing: border-box; }
     </style>
 </head>
 <body>
-
-<div class="nav"><b>MatrixGram Elite</b></div>
-
-<div class="feed" id="main">
-    <div id="login-box" class="post">
-        <input type="text" id="user" placeholder="Choose a Username">
-        <button onclick="startApp()">Join Feed</button>
+    <h3>MatrixGram Elite</h3>
+    <div id="login" class="post">
+        <input type="text" id="user" placeholder="Username" style="width:100%; padding:8px;">
+        <button onclick="enter()" style="margin-top:10px;">Login</button>
     </div>
 
-    <div id="app-box" style="display:none;">
-        <div class="input-area">
+    <div id="app" style="display:none; width:100%; max-width:400px;">
+        <div class="post">
             <textarea id="msg" placeholder="What's happening?"></textarea>
-            <button onclick="post()">Share</button>
+            <button onclick="send()" style="margin-top:10px;">Share</button>
         </div>
-        <div id="posts">Loading...</div>
+        <div id="feed"></div>
     </div>
-</div>
 
 <script>
-    // Your actual Vercel URL
     const SHIELD = "https://matrix-one-kappa.vercel.app/api/shield";
 
-    function startApp() {
+    function enter() {
         const u = document.getElementById('user').value;
-        if(!u) return alert("Enter username");
+        if(!u) return;
         localStorage.setItem('mg_user', u);
-        document.getElementById('login-box').style.display = 'none';
-        document.getElementById('app-box').style.display = 'block';
+        document.getElementById('login').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
         load();
     }
 
@@ -49,27 +41,18 @@
         try {
             const r = await fetch(SHIELD);
             const d = await r.json();
-            if(d.error) throw new Error(d.details);
-            document.getElementById('posts').innerHTML = d.feed.map(p => `
+            document.getElementById('feed').innerHTML = d.feed.map(p => `
                 <div class="post"><b>@${p.user}</b><br>${p.text}</div>
             `).join('');
-        } catch(e) { 
-            document.getElementById('posts').innerHTML = "Error: " + e.message;
-        }
+        } catch(e) { console.error("Sync failed", e); }
     }
 
-    async function post() {
+    async function send() {
         const m = document.getElementById('msg').value;
-        if(!m) return;
-        
         await fetch(SHIELD, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ 
-                username: localStorage.getItem('mg_user'), 
-                message: m, 
-                isSystem: false 
-            })
+            body: JSON.stringify({ username: localStorage.getItem('mg_user'), message: m })
         });
         document.getElementById('msg').value = '';
         load();
