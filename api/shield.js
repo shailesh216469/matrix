@@ -1,17 +1,16 @@
 const axios = require('axios');
 
 export default async function handler(req, res) {
-    // Security Headers to stop CORS errors
+    // Correcting the CORS headers seen in your logs
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
     if (req.method === 'OPTIONS') return res.status(200).end();
 
-    // Your specific credentials
+    // Your actual credentials from the latest request
     const TOKEN = "mct_9NRAuvt4XEtPNAEJ2KzcUNBs2JRcFb_rnJ3C2"; 
     const FEED_ROOM = "!XyqmTxnJJwcOdHTeSi:matrix.org";
-    const DATA_ROOM = "!ZXcgTnZkXLJFntSysJ:matrix.org";
     const BASE_URL = "https://matrix.org/_matrix/client/r0";
 
     try {
@@ -28,19 +27,17 @@ export default async function handler(req, res) {
         }
 
         if (req.method === 'POST') {
-            const { username, message, isSystem } = req.body;
-            const target = isSystem ? DATA_ROOM : FEED_ROOM;
-            const body = isSystem ? message : `${username}: ${message}`;
-
-            await axios.post(`${BASE_URL}/rooms/${encodeURIComponent(target)}/send/m.room.message?access_token=${TOKEN}`, {
-                body: body,
+            const { username, message } = req.body;
+            await axios.post(`${BASE_URL}/rooms/${encodeURIComponent(FEED_ROOM)}/send/m.room.message?access_token=${TOKEN}`, {
+                body: `${username}: ${message}`,
                 msgtype: "m.text"
             });
             return res.json({ success: true });
         }
     } catch (err) {
+        // Detailed error reporting to fix the 500 error
         return res.status(500).json({ 
-            error: "Matrix Sync Error", 
+            error: "Matrix Auth Failed", 
             details: err.response?.data?.error || err.message 
         });
     }
