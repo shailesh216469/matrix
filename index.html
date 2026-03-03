@@ -8,12 +8,15 @@
         .post { background: white; border: 1px solid #dbdbdb; padding: 15px; margin: 10px; width: 90%; max-width: 400px; border-radius: 8px; }
         button { background: #0095f6; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; }
         textarea { width: 100%; padding: 10px; border: 1px solid #dbdbdb; border-radius: 5px; box-sizing: border-box; }
+        #error-msg { color: red; font-size: 12px; margin: 10px; text-align: center; }
     </style>
 </head>
 <body>
     <h3>MatrixGram Elite</h3>
+    <div id="error-msg"></div>
+
     <div id="login" class="post">
-        <input type="text" id="user" placeholder="Username" style="width:100%; padding:8px;">
+        <input type="text" id="user" placeholder="Enter Username" style="width:100%; padding:8px;">
         <button onclick="enter()" style="margin-top:10px;">Login</button>
     </div>
 
@@ -28,6 +31,8 @@
 <script>
     const SHIELD = "https://matrix-one-kappa.vercel.app/api/shield";
 
+    function showError(m) { document.getElementById('error-msg').innerText = "Status: " + m; }
+
     function enter() {
         const u = document.getElementById('user').value;
         if(!u) return;
@@ -41,21 +46,28 @@
         try {
             const r = await fetch(SHIELD);
             const d = await r.json();
+            if (d.error) return showError(d.details);
             document.getElementById('feed').innerHTML = d.feed.map(p => `
                 <div class="post"><b>@${p.user}</b><br>${p.text}</div>
             `).join('');
-        } catch(e) { console.error("Sync failed", e); }
+            showError("Connected");
+        } catch(e) { showError("Vercel Offline or URL Wrong"); }
     }
 
     async function send() {
         const m = document.getElementById('msg').value;
-        await fetch(SHIELD, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ username: localStorage.getItem('mg_user'), message: m })
-        });
-        document.getElementById('msg').value = '';
-        load();
+        if(!m) return;
+        try {
+            const res = await fetch(SHIELD, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ username: localStorage.getItem('mg_user'), message: m })
+            });
+            const data = await res.json();
+            if(data.error) return alert("Post Failed: " + data.details);
+            document.getElementById('msg').value = '';
+            load();
+        } catch(e) { alert("Network Error"); }
     }
 </script>
 </body>
