@@ -1,1 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MatrixGram Elite</title>
+    <style>
+        body { font-family: sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .card { background: white; padding: 20px; border-radius: 10px; width: 100%; max-width: 400px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        input, textarea, button { width: 100%; padding: 10px; margin: 5px 0; border-radius: 5px; border: 1px solid #ddd; box-sizing: border-box; }
+        button { background: #0095f6; color: white; border: none; font-weight: bold; cursor: pointer; }
+        .post { background: white; border: 1px solid #dbdbdb; padding: 15px; border-radius: 10px; margin-bottom: 10px; width: 100%; max-width: 400px; }
+    </style>
+</head>
+<body>
 
+    <div id="auth-ui" class="card">
+        <h2>Login</h2>
+        <input type="text" id="username" placeholder="Username">
+        <button onclick="login()">Enter</button>
+    </div>
+
+    <div id="app-ui" style="display:none; width: 100%; max-width: 400px;">
+        <div class="card">
+            <textarea id="postInput" placeholder="Write something..."></textarea>
+            <button onclick="sendPost()">Post</button>
+        </div>
+        <div id="feed"></div>
+    </div>
+
+    <script>
+        // REPLACE THIS AFTER DEPLOYING TO VERCEL
+        const SHIELD = "https://matrix-one-kappa.vercel.app";
+
+        function login() {
+            const user = document.getElementById('username').value;
+            if(user) {
+                localStorage.setItem('user', user);
+                document.getElementById('auth-ui').style.display = 'none';
+                document.getElementById('app-ui').style.display = 'block';
+                sync();
+            }
+        }
+
+        async function sync() {
+            const res = await fetch(SHIELD);
+            const data = await res.json();
+            document.getElementById('feed').innerHTML = data.feed.map(p => `
+                <div class="post">
+                    <b>${p.user}</b><br>${p.text}
+                </div>
+            `).join('');
+        }
+
+        async function sendPost() {
+            const msg = document.getElementById('postInput').value;
+            await fetch(SHIELD, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ username: localStorage.getItem('user'), message: msg, isSystem: false })
+            });
+            document.getElementById('postInput').value = '';
+            sync();
+        }
+    </script>
+</body>
+</html>
