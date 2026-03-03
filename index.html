@@ -1,67 +1,79 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MatrixGram Elite</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { font-family: sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .card { background: white; padding: 20px; border-radius: 10px; width: 100%; max-width: 400px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 15px; }
-        input, textarea, button { width: 100%; padding: 10px; margin: 5px 0; border-radius: 5px; border: 1px solid #ddd; box-sizing: border-box; }
+        body { font-family: sans-serif; background: #fafafa; margin: 0; display: flex; flex-direction: column; align-items: center; }
+        .nav { background: white; border-bottom: 1px solid #dbdbdb; width: 100%; padding: 10px; text-align: center; position: sticky; top: 0; }
+        .feed { width: 100%; max-width: 500px; padding: 20px; box-sizing: border-box; }
+        .post { background: white; border: 1px solid #dbdbdb; margin-bottom: 20px; padding: 15px; border-radius: 8px; }
+        .input-area { background: white; border: 1px solid #dbdbdb; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        input, button, textarea { width: 100%; padding: 12px; margin-top: 10px; border: 1px solid #dbdbdb; border-radius: 5px; box-sizing: border-box; }
         button { background: #0095f6; color: white; border: none; font-weight: bold; cursor: pointer; }
-        .post { background: white; border: 1px solid #dbdbdb; padding: 15px; border-radius: 10px; margin-bottom: 10px; width: 100%; max-width: 400px; }
     </style>
 </head>
 <body>
 
-    <div id="auth-ui" class="card">
-        <h2>Login</h2>
-        <input type="text" id="username" placeholder="Username">
-        <button onclick="login()">Enter</button>
+<div class="nav"><b>MatrixGram Elite</b></div>
+
+<div class="feed" id="main">
+    <div id="login-box" class="post">
+        <input type="text" id="user" placeholder="Choose a Username">
+        <button onclick="startApp()">Join Feed</button>
     </div>
 
-    <div id="app-ui" style="display:none; width: 100%; max-width: 400px;">
-        <div class="card">
-            <textarea id="postInput" placeholder="Write something..."></textarea>
-            <button onclick="sendPost()">Post</button>
+    <div id="app-box" style="display:none;">
+        <div class="input-area">
+            <textarea id="msg" placeholder="What's happening?"></textarea>
+            <button onclick="post()">Share</button>
         </div>
-        <div id="feed"></div>
+        <div id="posts">Loading...</div>
     </div>
+</div>
 
-    <script>
-        // REPLACE THIS AFTER DEPLOYING TO VERCEL
-        const SHIELD = "https://matrix-one-kappa.vercel.app/api/shield";
+<script>
+    // Your actual Vercel URL
+    const SHIELD = "https://matrix-one-kappa.vercel.app/api/shield";
 
-        function login() {
-            const user = document.getElementById('username').value;
-            if(user) {
-                localStorage.setItem('user', user);
-                document.getElementById('auth-ui').style.display = 'none';
-                document.getElementById('app-ui').style.display = 'block';
-                sync();
-            }
-        }
+    function startApp() {
+        const u = document.getElementById('user').value;
+        if(!u) return alert("Enter username");
+        localStorage.setItem('mg_user', u);
+        document.getElementById('login-box').style.display = 'none';
+        document.getElementById('app-box').style.display = 'block';
+        load();
+    }
 
-        async function sync() {
-            const res = await fetch(SHIELD);
-            const data = await res.json();
-            document.getElementById('feed').innerHTML = data.feed.map(p => `
-                <div class="post">
-                    <b>${p.user}</b><br>${p.text}
-                </div>
+    async function load() {
+        try {
+            const r = await fetch(SHIELD);
+            const d = await r.json();
+            if(d.error) throw new Error(d.details);
+            document.getElementById('posts').innerHTML = d.feed.map(p => `
+                <div class="post"><b>@${p.user}</b><br>${p.text}</div>
             `).join('');
+        } catch(e) { 
+            document.getElementById('posts').innerHTML = "Error: " + e.message;
         }
+    }
 
-        async function sendPost() {
-            const msg = document.getElementById('postInput').value;
-            await fetch(SHIELD, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ username: localStorage.getItem('user'), message: msg, isSystem: false })
-            });
-            document.getElementById('postInput').value = '';
-            sync();
-        }
-    </script>
+    async function post() {
+        const m = document.getElementById('msg').value;
+        if(!m) return;
+        
+        await fetch(SHIELD, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ 
+                username: localStorage.getItem('mg_user'), 
+                message: m, 
+                isSystem: false 
+            })
+        });
+        document.getElementById('msg').value = '';
+        load();
+    }
+</script>
 </body>
 </html>
